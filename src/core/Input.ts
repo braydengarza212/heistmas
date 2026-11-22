@@ -23,6 +23,7 @@ export class Input {
   private lockPendingUntil = 0;
   /** Gesture-backed requests the browser refused in a row; only repeated refusals mean "no lock here". */
   private lockFailures = 0;
+  private lastUnlockAt = -1e9;
 
   constructor(private canvas: HTMLCanvasElement) {
     window.addEventListener('keydown', (e) => this.onKeyDown(e), { capture: true });
@@ -73,7 +74,7 @@ export class Input {
       if (this.pointerLocked) {
         this.lockFailures = 0;
         this.pointerLockFailed = false;
-      }
+      } else this.lastUnlockAt = performance.now();
       this.onPointerLockChange?.(this.pointerLocked);
     });
     document.addEventListener('pointerlockerror', () => {
@@ -84,7 +85,7 @@ export class Input {
 
   private onKeyDown(e: KeyboardEvent) {
     // A key press is a user gesture, so it can capture the cursor (W to start running locks it).
-    if (this.gameplayActive && !this.pointerLocked && !e.repeat && e.code !== 'Escape' && !e.metaKey && !e.altKey) this.requestPointerLock(true);
+    if (this.gameplayActive && !this.pointerLocked && !this.pointerLockFailed && !e.repeat && e.code !== 'Escape' && !e.metaKey && !e.altKey) this.requestPointerLock(true);
     // Never block browser/devtools shortcuts outside of gameplay.
     if (this.gameplayActive) {
       const allow = e.code === 'F5' || e.code === 'F11' || e.code === 'F12';
@@ -140,6 +141,8 @@ export class Input {
    * after several refusals in a row fall back to drag-to-look.
    */
   private noteLockFailure() {
+    // Chrome refuses re-locking for about a second after the cursor was released: not a real failure
+    if (performance.now() - this.lastUnlockAt < 1600) return;
     if (++this.lockFailures >= 4) this.pointerLockFailed = true;
   }
 

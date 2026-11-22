@@ -29,6 +29,8 @@ export class App {
   private mode: 'menu' | 'heist' = 'menu';
   private last = performance.now();
   private fpsAcc = 0;
+  /** When the 'cursor lock blocked' note was first shown (-1 = not yet). */
+  private lockBlockedShownAt = -1;
   private fpsFrames = 0;
   private pendingScore: ScoreSubmission | null = null;
   private expectUnlock = false;
@@ -97,7 +99,7 @@ export class App {
 
     this.input.onPointerLockChange = (locked) => {
       if (this.mode !== 'heist' || !this.heist) return;
-      if (locked) this.hud.showLockHint(false);
+      if (locked) this.hud.showLockHint(null);
       else if (!this.expectUnlock && !this.heist.paused && (this.heist.state === 'play' || this.heist.state === 'intro')) this.pause();
       this.expectUnlock = false;
     };
@@ -162,8 +164,15 @@ export class App {
     }
     const st = this.heist?.state;
     if (this.mode === 'heist' && this.heist && !this.heist.paused && (st === 'play' || st === 'ready' || st === 'intro')) {
-      this.hud.showLockHint(!this.input.pointerLocked && !this.input.pointerLockFailed);
-    } else this.hud.showLockHint(false);
+      const inp = this.input;
+      if (inp.pointerLocked) this.lockBlockedShownAt = -1;
+      else if (!inp.pointerLockFailed) this.hud.showLockHint('ask');
+      // explain once (for 8 s) that this browser can't lock the cursor
+      if (!inp.pointerLocked && inp.pointerLockFailed) {
+        if (this.lockBlockedShownAt < 0) this.lockBlockedShownAt = performance.now();
+        this.hud.showLockHint(performance.now() - this.lockBlockedShownAt < 8000 ? 'blocked' : null);
+      } else if (inp.pointerLocked) this.hud.showLockHint(null);
+    } else this.hud.showLockHint(null);
     requestAnimationFrame(this.loop);
   };
 

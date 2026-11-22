@@ -411,8 +411,15 @@ export class Hud {
     this.title.classList.remove('show');
   }
 
-  showLockHint(show: boolean) {
-    this.lockHint.classList.toggle('show', show);
+  /** 'ask': cursor can be locked; 'blocked': this browser refuses (in-app browsers, embedded panes). */
+  showLockHint(mode: 'ask' | 'blocked' | null) {
+    const text =
+      mode === 'blocked'
+        ? 'This browser won\u2019t lock the cursor \u2014 hold the mouse button and drag to look, or open the game in Chrome, Edge or Firefox'
+        : 'Click or press any key to lock the cursor';
+    if (mode && this.lockHint.textContent !== text) this.lockHint.textContent = text;
+    this.lockHint.classList.toggle('show', mode !== null);
+    this.lockHint.classList.toggle('blocked', mode === 'blocked');
   }
 
   setFps(fps: number | null) {

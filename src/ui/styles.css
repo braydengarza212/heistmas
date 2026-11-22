@@ -2741,3 +2741,10 @@ table.lb tr.podium td {
 .race-bank:empty {
   display: none;
 }
+
+.lock-hint.blocked {
+  max-width: min(560px, 86vw);
+  font-size: 15px;
+  text-align: center;
+  line-height: 1.35;
+}
