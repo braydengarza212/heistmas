@@ -112,8 +112,14 @@ export class CameraRig {
     for (const [ox, oy] of offsets) {
       const o = this.pivot.clone().addScaledVector(right, ox);
       o.y += oy;
+      // a side ray that would start inside a wall (hugging it) says nothing about the space behind: skip it
+      if (ox !== 0 || oy !== 0) {
+        const toO = o.clone().sub(this.pivot);
+        const len = toO.length();
+        if (this.physics.rayWorld(this.pivot, toO.normalize(), len + 0.02, G.CAMERA_BLOCK) !== null) continue;
+      }
       const d = this.physics.rayWorld(o, this.dir, desired + 0.3, G.CAMERA_BLOCK);
-      if (d !== null) hitDist = Math.min(hitDist, d - 0.35);
+      if (d !== null) hitDist = Math.min(hitDist, d - 0.35 * K);
     }
     hitDist = Math.max(0.9 * K, hitDist);
     this.curDist = hitDist < this.curDist ? damp(this.curDist, hitDist, 28, dt) : damp(this.curDist, hitDist, 3.5, dt);
@@ -121,13 +127,15 @@ export class CameraRig {
     // when a wall pushes the camera in, rise up so the robber stays readable
     const squeeze = 1 - Math.min(1, this.curDist / Math.max(1, desired));
     this.followPos.copy(this.pivot).addScaledVector(this.dir, this.curDist);
+    // a little lift so the robber stays in view, but never a swing overhead (sized to the robber)
+    const lift = 0.55 * K;
     if (squeeze > 0.05) {
-      const head = this.physics.rayWorld(this.followPos, new THREE.Vector3(0, 1, 0), 2.2, G.CAMERA_BLOCK);
-      const room = head === null ? 1.6 : Math.max(0, head - 0.35);
-      this.followPos.y += Math.min(squeeze * 1.6, room);
+      const head = this.physics.rayWorld(this.followPos, new THREE.Vector3(0, 1, 0), lift + 0.4, G.CAMERA_BLOCK);
+      const room = head === null ? lift : Math.max(0, head - 0.25);
+      this.followPos.y += Math.min(squeeze * lift, room);
     }
     this.followLook.copy(this.pivot);
-    this.followLook.y -= squeeze * 0.4;
+    this.followLook.y -= squeeze * 0.15 * K;
 
     // cinematic blend
     this.cineBlend = damp(this.cineBlend, this.cineTarget, 3.2, dt);

@@ -71,6 +71,8 @@ export interface StandingEntry {
   username: string;
   timeMs: number;
   server: number;
+  /** Verified loot stolen ($). */
+  loot?: number;
 }
 
 export interface Standings {
@@ -93,10 +95,25 @@ export interface Winner {
   signature: string | null;
 }
 
+/** One escaped robber on the end-of-round leaderboard. */
+export interface BoardEntry {
+  rank: number;
+  username: string;
+  timeMs: number;
+  /** Verified loot stolen ($). */
+  loot: number;
+  /** SOL prize won (0 outside the top 3). */
+  lamports: number;
+}
+
 export interface RoundResults {
   round: number;
   potLamports: number;
   winners: Winner[];
+  /** Everyone who escaped, fastest first (up to 50). Older rounds may not have it. */
+  board?: BoardEntry[];
+  /** Total loot stolen by everyone who escaped ($). */
+  totalLoot?: number;
   rolledOverLamports: number;
   finishers: number;
   players: number;

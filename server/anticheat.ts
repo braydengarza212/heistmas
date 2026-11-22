@@ -59,6 +59,11 @@ export class RunCheck {
     private limits: CheckLimits,
   ) {}
 
+  /** Loot the trace supports (pickups minus drops). */
+  get verifiedLoot() {
+    return this.loot;
+  }
+
   get failed() {
     return this.reasons.length > 0;
   }

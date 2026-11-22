@@ -432,7 +432,10 @@ export class Bean {
       new THREE.Vector2(radiusAt(y1) - 0.006, y1 + 0.006),
     ];
     let maskMat: THREE.Material;
-    if (mask.stripe !== undefined) {
+    if (mask.stripe !== undefined && !(mask.color === 0xf7f2ea && mask.stripe === 0xd31f2b)) {
+      const t = stripeTexture(mask.color, mask.stripe);
+      maskMat = this.track(new THREE.MeshPhysicalMaterial({ map: t, roughness: 0.25, clearcoat: 1 }));
+    } else if (mask.stripe !== undefined) {
       const t = TextureLib.candyStripe().clone();
       t.repeat.set(10, 1);
       t.needsUpdate = true;
@@ -715,6 +718,78 @@ export class Bean {
         tail.rotation.set(0.5, 0, s * 0.25);
       }
       this.hatTip = tip;
+    } else if (kind === 'earmuffs') {
+      // headband over the crown with two fluffy muffs at ear height
+      // the muffs sit on the sides of the head at eye level; the band arches over the top
+      const earY = 1.12 - 1.31;
+      const side = radiusAt(1.12) + 0.035;
+      const bandMat = this.mat(style.hatColor, { roughness: 0.35, clearcoat: 0.8 });
+      const band = this.mesh(torus(side, 0.032, 8, 48, Math.PI), bandMat, hp);
+      band.rotation.set(0, 0, 0);
+      band.position.y = earY;
+      band.scale.set(1, 0.86, 1);
+      const muff = this.fur(style.hatTrim);
+      for (const s of [-1, 1]) {
+        const m = this.mesh(fluffySphere(0.14, 0.03, 7 + s), muff, hp);
+        m.position.set(s * (side + 0.02), earY, 0);
+        m.scale.set(0.62, 1, 1);
+      }
+      this.hatTip = null;
+    } else if (kind === 'star') {
+      // a gold star bobbing on a spring above a thin headband
+      const bandMat = this.mat(style.hatColor, { roughness: 0.4, clearcoat: 0.6 });
+      const band = this.mesh(torus(0.3, 0.028, 8, 40), bandMat, hp);
+      band.rotation.x = Math.PI / 2;
+      band.position.y = -0.02;
+      const tip = new THREE.Group();
+      tip.position.set(0, 0.36, 0);
+      hp.add(tip);
+      // the spring: a little helix
+      const pts: THREE.Vector3[] = [];
+      for (let i = 0; i <= 60; i++) {
+        const a = (i / 60) * Math.PI * 10;
+        pts.push(new THREE.Vector3(Math.cos(a) * 0.035, (i / 60) * 0.34, Math.sin(a) * 0.035));
+      }
+      const spring = this.mesh(this.track(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 120, 0.008, 6)), Mats.chrome(), hp);
+      spring.position.y = 0.0;
+      const star = this.mesh(this.track(star3D(0.13, 0.06, 0.05)), Mats.gold(), tip);
+      star.rotation.y = Math.PI / 2;
+      const glow = this.mesh(this.track(star3D(0.07, 0.033, 0.06)), Mats.glow(0xffd34a, 2), tip, false);
+      glow.rotation.y = Math.PI / 2;
+      this.hatTip = tip;
+    } else if (kind === 'pudding') {
+      // a Christmas pudding: dark fruity dome, white icing drips and a sprig of holly
+      const pud = this.mat(0x4a2414, { roughness: 0.75, clearcoat: 0.2 });
+      const dome = this.mesh(this.track(new THREE.SphereGeometry(0.33, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2)), pud, hp);
+      dome.scale.set(1, 0.9, 1);
+      dome.position.y = -0.03;
+      const icing = this.mat(0xfdfaf3, { roughness: 0.3, clearcoat: 1 });
+      const cap = this.mesh(this.track(new THREE.SphereGeometry(0.335, 28, 8, 0, Math.PI * 2, 0, 0.75)), icing, hp);
+      cap.scale.set(1, 0.9, 1);
+      cap.position.y = -0.03;
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2 + 0.2;
+        const drip = this.mesh(capsuleGeo(0.03, 0.06 + (i % 3) * 0.03), icing, hp);
+        drip.position.set(Math.sin(a) * 0.23, 0.12 - (i % 3) * 0.015, Math.cos(a) * 0.23);
+      }
+      for (let i = 0; i < 14; i++) {
+        const a = i * 2.4;
+        const r = 0.31;
+        const y = -0.02 + (i % 4) * 0.035;
+        const rr = Math.sqrt(Math.max(0, r * r - y * y * 1.2));
+        const raisin = this.mesh(sphere(0.018, 6, 5), this.mat(0x1a0c06, { roughness: 0.5 }), hp);
+        raisin.position.set(Math.sin(a) * rr, y, Math.cos(a) * rr);
+      }
+      const leafMat = this.mat(0x1d7a3e, { roughness: 0.4, clearcoat: 0.5 });
+      for (const s of [-1, 1]) {
+        const leaf = this.mesh(sphere(0.07, 12, 8), leafMat, hp);
+        leaf.position.set(s * 0.06, 0.29, 0);
+        leaf.scale.set(1.5, 0.35, 0.7);
+        leaf.rotation.y = s * 0.5;
+      }
+      const berry = this.mat(0xd31f2b, { roughness: 0.2, clearcoat: 1 });
+      for (let i = 0; i < 3; i++) this.mesh(sphere(0.03, 10, 8), berry, hp).position.set((i - 1) * 0.035, 0.32, (i % 2) * 0.03);
+      this.hatTip = null;
     }
   }
 
@@ -741,6 +816,15 @@ export class Bean {
       }
       case 'midnight':
         mat = this.track(new THREE.MeshPhysicalMaterial({ color: 0x1b2466, roughness: 0.65, sheen: 1, sheenColor: new THREE.Color(0x9fb3ff) }));
+        break;
+      case 'frost':
+        mat = this.track(new THREE.MeshPhysicalMaterial({ color: 0xbfe9ff, roughness: 0.15, metalness: 0.1, clearcoat: 1, iridescence: 0.6, sheen: 0.5, sheenColor: new THREE.Color(0xffffff) }));
+        break;
+      case 'holly':
+        mat = this.track(new THREE.MeshPhysicalMaterial({ color: 0x17703a, roughness: 0.6, sheen: 1, sheenColor: new THREE.Color(0x9cffb8) }));
+        break;
+      case 'ginger':
+        mat = this.track(new THREE.MeshPhysicalMaterial({ color: 0xb06a32, roughness: 0.7, clearcoat: 0.15 }));
         break;
       default:
         mat = this.track(new THREE.MeshStandardMaterial({ map: TextureLib.burlap(), roughness: 0.95 }));
@@ -1135,4 +1219,39 @@ function mergeAll(geos: THREE.BufferGeometry[]) {
   out.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   out.setIndex(new THREE.BufferAttribute(idx, 1));
   return out;
+}
+
+const stripeCache = new Map<string, THREE.CanvasTexture>();
+
+/** Two-colour diagonal stripes for striped masks (cached: shared by every robber wearing them). */
+function stripeTexture(a: number, b: number) {
+  const key = `${a}-${b}`;
+  const hit = stripeCache.get(key);
+  if (hit) return hit;
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#' + a.toString(16).padStart(6, '0');
+  g.fillRect(0, 0, 64, 64);
+  g.fillStyle = '#' + b.toString(16).padStart(6, '0');
+  for (let x = -64; x < 128; x += 32) {
+    g.beginPath();
+    g.moveTo(x, 0);
+    g.lineTo(x + 16, 0);
+    g.lineTo(x + 16 + 64, 64);
+    g.lineTo(x + 64, 64);
+    g.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 4;
+  t.repeat.set(10, 1);
+  stripeCache.set(key, t);
+  return t;
+}
+
+function capsuleGeo(r: number, len: number) {
+  return new THREE.CapsuleGeometry(r, len, 4, 8);
 }

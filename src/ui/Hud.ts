@@ -213,7 +213,7 @@ export class Hud {
     const list = this.raceEl.querySelector('.race-list') as HTMLElement;
     const top = st?.top.slice(0, 3) ?? [];
     list.innerHTML = top.length
-      ? top.map((e) => `<li class="${e.username === you ? 'me' : ''}"><b>${e.rank}</b><span class="nm">${escapeHtml(e.username)}</span><span class="tm">${formatTimeMs(e.timeMs)}</span></li>`).join('')
+      ? top.map((e) => `<li class="${e.username === you ? 'me' : ''}"><b>${e.rank}</b><span class="nm">${escapeHtml(e.username)}</span>${e.loot !== undefined ? `<span class="lt">${formatMoney(e.loot)}</span>` : ''}<span class="tm">${formatTimeMs(e.timeMs)}</span></li>`).join('')
       : '<li class="empty">No escapes yet — be the first!</li>';
     (this.raceEl.querySelector('.race-count') as HTMLElement).textContent = st ? `${st.finishers} of ${st.players} escaped` : '';
     const youEl = this.raceEl.querySelector('.race-you') as HTMLElement;

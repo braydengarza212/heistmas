@@ -57,6 +57,7 @@ interface Entry {
   timeMs: number;
   server: number;
   at: number;
+  loot: number;
 }
 
 const SETTLE_GRACE_MS = 1500;
@@ -177,6 +178,10 @@ export class Game {
       this.log(`round ${id}: settlement error: ${(e as Error).message}`);
       results = { round: id, potLamports: 0, winners: [], rolledOverLamports: this.treasury.potLamports(), finishers: ranked.length, players, endedAt: Date.now() };
     }
+    // the full leaderboard: everyone who escaped, with what they stole and won
+    const won = new Map(results.winners.map((w) => [w.username, w.lamports]));
+    results.board = ranked.slice(0, 50).map((e, i) => ({ rank: i + 1, username: e.username, timeMs: e.timeMs, loot: e.loot, lamports: won.get(e.username) ?? 0 }));
+    results.totalLoot = ranked.reduce((s, e) => s + e.loot, 0);
     // player stats
     for (const uid of this.participants) {
       const u = this.store.userById(uid);
@@ -233,7 +238,7 @@ export class Game {
   standings(): Standings {
     const top = this.ranked()
       .slice(0, 10)
-      .map((e, i) => ({ rank: i + 1, username: e.username, timeMs: e.timeMs, server: e.server }));
+      .map((e, i) => ({ rank: i + 1, username: e.username, timeMs: e.timeMs, server: e.server, loot: e.loot }));
     return { round: this.round.id, top, finishers: this.entries.size, players: this.participants.size };
   }
 
@@ -482,7 +487,7 @@ export class Game {
       return this.send(c, { t: 'finish', a, accepted: false, timeMs: elapsed, rank: null, note: 'Your run could not be verified, so it does not count for prizes.' });
     }
     if (!this.entries.has(c.user.id)) {
-      this.entries.set(c.user.id, { userId: c.user.id, username: c.user.username, wallet: c.user.wallet, timeMs: elapsed, server: c.room.id, at: now });
+      this.entries.set(c.user.id, { userId: c.user.id, username: c.user.username, wallet: c.user.wallet, timeMs: elapsed, server: c.room.id, at: now, loot: Math.max(0, Math.round(this.cfg.antiCheat ? run.verifiedLoot : Number(loot) || 0)) });
       this.standingsDirty = true;
     }
     const rank = this.ranked().findIndex((e) => e.userId === c.user!.id) + 1;

@@ -16,7 +16,7 @@ import type { Hud } from '../ui/Hud';
 import { solText } from '../ui/Hud';
 import type { AudioEngine } from '../core/Audio';
 import type { Heist, HeistEvent, HeistResult, OnlineHooks } from '../game/Heist';
-import { formatTimeMs } from '../core/math';
+import { formatMoney, formatTimeMs } from '../core/math';
 import { ICON } from '../ui/icons';
 import { USERNAME_RE, LAMPORTS_PER_SOL, shortWallet, type InfoResponse, type LeaderboardResponse, type RoundResults, type ServerInfo, type ServerMsg } from '../shared/protocol';
 
@@ -528,7 +528,8 @@ export class Online implements OnlineView {
                   : w.status === 'failed'
                     ? 'Delayed — retrying automatically'
                     : 'Below minimum — rolled over';
-            return `<div class="pod p${w.place} ${w.username === me ? 'me' : ''}"><div class="pod-place">${places[w.place - 1]}</div><div class="pod-name">${esc(w.username)}</div><div class="pod-time">${formatTimeMs(w.timeMs)}</div><div class="pod-amt">${w.lamports ? `+${solText(w.lamports)} SOL` : '—'}</div><div class="pod-wallet">${esc(w.wallet)}</div><div class="pod-st">${status}</div></div>`;
+            const stole = res.board?.find((b) => b.username === w.username)?.loot;
+            return `<div class="pod p${w.place} ${w.username === me ? 'me' : ''}"><div class="pod-place">${places[w.place - 1]}</div><div class="pod-name">${esc(w.username)}</div><div class="pod-time">${formatTimeMs(w.timeMs)}</div>${stole !== undefined ? `<div class="pod-loot">Stole ${formatMoney(stole)}</div>` : ''}<div class="pod-amt">${w.lamports ? `+${solText(w.lamports)} SOL` : '—'}</div><div class="pod-wallet">${esc(w.wallet)}</div><div class="pod-st">${status}</div></div>`;
           })
           .join('')
       : `<div class="empty-note">Nobody escaped in time. The whole pot rolls into the next round!</div>`;
@@ -536,9 +537,27 @@ export class Online implements OnlineView {
     const nextIn = this.nextStartAt() - this.client.serverNow();
     return `<div class="rr-head"><span class="pill gold">ROUND ${res.round} WINNERS</span><span>Prize pot ${solText(res.potLamports)} SOL · ${res.finishers} of ${res.players} escaped</span></div>
       <div class="podium">${pods}</div>
+      ${this.boardHtml(res, me)}
       ${res.rolledOverLamports > 1000 ? `<div class="rr-roll">${solText(res.rolledOverLamports)} SOL rolls over into the next pot</div>` : ''}
       <div class="rr-me">${mine}</div>
       <div class="rr-next">Round ${res.round + 1} starts in <b data-cd="next">${mmss(nextIn)}</b> — stay here and you're in.</div>`;
+  }
+
+  /** Everyone who escaped, with the loot they made and any SOL they won. */
+  private boardHtml(res: RoundResults, me: string | undefined) {
+    const board = res.board ?? [];
+    if (!board.length) return '';
+    const total = res.totalLoot ?? board.reduce((s, b) => s + b.loot, 0);
+    const rows = board
+      .map(
+        (b) =>
+          `<tr class="${b.username === me ? 'me' : ''} ${b.lamports ? 'paid' : ''}"><td class="rk">${b.rank}</td><td class="nm">${esc(b.username)}</td><td class="tm">${formatTimeMs(b.timeMs)}</td><td class="lt">${formatMoney(b.loot)}</td><td class="sol">${b.lamports ? `+${solText(b.lamports)} SOL` : '—'}</td></tr>`,
+      )
+      .join('');
+    return `<div class="rr-board">
+      <div class="rr-board-head"><span>LEADERBOARD</span><span>${board.length} escaped · ${formatMoney(total)} stolen in total</span></div>
+      <div class="rr-board-scroll"><table><thead><tr><th>#</th><th>Robber</th><th>Time</th><th>Made</th><th>Won</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
   }
 
   // ------------------------------------------------------------- joining
