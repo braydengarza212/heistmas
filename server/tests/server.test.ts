@@ -233,7 +233,7 @@ test('a stats reset wipes every player\'s stats and round history once, keeping 
   const dir = mkdtempSync(join(tmpdir(), 'heistmas-reset-'));
   const { writeFileSync } = require('node:fs') as typeof import('node:fs');
   const w = wallet();
-  writeFileSync(join(dir, 'users.json'), JSON.stringify({ list: [{ id: 'blitzen', username: 'Blitzen', wallet: w, tokens: ['t'], createdAt: 1, wins: 4, podiums: 9, wonLamports: 5e9, bestTimeMs: 61000, roundsPlayed: 30 }] }));
+  writeFileSync(join(dir, 'users.json'), JSON.stringify({ list: [{ id: 'blitzen', username: 'Blitzen', wallet: w, tokens: ['t'], createdAt: 1, wins: 4, podiums: 9, wonLamports: 5e9, bestTimeMs: 61000, roundsPlayed: 30 }], accountsEpoch: 1 }));
   writeFileSync(join(dir, 'rounds.json'), JSON.stringify({ lastRoundId: 77, results: [{ round: 77 }], flagged: [{ round: 70, username: 'x', reasons: [], at: 1 }] }));
   const s = new Store(dir);
   assert.equal(s.statsWasReset, true);
@@ -249,4 +249,25 @@ test('a stats reset wipes every player\'s stats and round history once, keeping 
   const again = new Store(dir);
   assert.equal(again.statsWasReset, false);
   assert.equal(again.userById('blitzen')!.wins, 1);
+});
+
+test('an accounts reset deletes every username + SOL address once, so everyone signs up again', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'heistmas-acc-'));
+  const { writeFileSync } = require('node:fs') as typeof import('node:fs');
+  const w = wallet();
+  writeFileSync(join(dir, 'users.json'), JSON.stringify({ list: [{ id: 'comet', username: 'Comet', wallet: w, tokens: ['tok'], createdAt: 1, wins: 2, podiums: 3, wonLamports: 1, bestTimeMs: 50000, roundsPlayed: 4 }] }));
+  const s = new Store(dir);
+  assert.equal(s.accountsWiped, 1);
+  assert.equal(s.userCount, 0);
+  assert.equal(s.userById('comet'), null);
+  assert.equal(s.userByWallet(w), null);
+  assert.equal(s.userByTokenHash('tok'), null);
+  // the name and address can be registered again, and survive a restart
+  const accounts = new Accounts(s, 100);
+  const r = accounts.register('Comet', wallet(), true, '1.2.3.4');
+  assert.ok(r.token);
+  s.flushAll();
+  const again = new Store(dir);
+  assert.equal(again.accountsWiped, 0);
+  assert.ok(again.userById('comet'));
 });

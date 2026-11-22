@@ -58,6 +58,8 @@ export class Online implements OnlineView {
   private regWallet = '';
   private nameCheck = 0;
   private serverMsg = '';
+  /** Shown above the sign-up form (e.g. after accounts were reset). */
+  private regNotice = '';
 
   constructor(
     private app: OnlineApp,
@@ -201,6 +203,7 @@ export class Online implements OnlineView {
     if (this.regStep === 'name') {
       body.innerHTML = `
         <h2>Pick your robber name</h2>
+        ${this.regNotice ? `<p class="reg-notice">${esc(this.regNotice)}</p>` : ''}
         <p class="reg-lead">This name is permanent. It shows on the live standings and the winners' list.</p>
         <label class="field"><span>Username</span><input id="reg-name" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="e.g. SneakySanta" value="${esc(this.regName)}"></label>
         <div class="field-note" id="reg-name-note">3–16 letters, numbers or underscores.</div>
@@ -349,6 +352,7 @@ export class Online implements OnlineView {
   private signedIn(s: Session) {
     this.session = s;
     saveSession(s);
+    this.regNotice = '';
     this.audio.play('unlock');
     this.regName = '';
     this.regWallet = '';
@@ -528,7 +532,7 @@ export class Online implements OnlineView {
       const msgs: Record<string, string> = {
         offline: 'Could not reach the game servers. Try again in a moment.',
         full: 'That server is full. Pick another one.',
-        auth: 'Your session expired. Please log in again.',
+        auth: 'Your account is no longer on the server (accounts were reset). Please sign up again.',
         version: 'The game was updated. Refresh the page to play.',
         'ip-limit': 'Too many connections from your network.',
       };
@@ -536,7 +540,8 @@ export class Online implements OnlineView {
       if (r === 'auth') {
         this.session = null;
         saveSession(null);
-        this.regStep = 'login';
+        this.regStep = 'name';
+        this.regNotice = 'Accounts were reset: pick a robber name and enter your SOL payout address again.';
         this.menus.show('register');
       } else this.renderServers();
       return;

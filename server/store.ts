@@ -3,7 +3,7 @@
  * written atomically (temp file + rename) a moment after it changes.
  * Put DATA_DIR on a persistent disk in production.
  */
-import { STATS_EPOCH } from '../src/shared/protocol';
+import { ACCOUNTS_EPOCH, STATS_EPOCH } from '../src/shared/protocol';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { PayoutStatus, RoundResults } from '../src/shared/protocol';
@@ -97,7 +97,7 @@ class JsonFile<T> {
 }
 
 export class Store {
-  readonly users: JsonFile<{ list: UserRecord[] }>;
+  readonly users: JsonFile<{ list: UserRecord[]; accountsEpoch?: number }>;
   readonly treasury: JsonFile<TreasuryLedger>;
   readonly rounds: JsonFile<RoundLog>;
   private byId = new Map<string, UserRecord>();
@@ -119,6 +119,7 @@ export class Store {
       payouts: [],
     }));
     this.rounds = new JsonFile(join(dir, 'rounds.json'), () => ({ lastRoundId: 0, results: [], flagged: [] }));
+    this.applyAccountsReset();
     for (const u of this.users.data.list) this.index(u);
     this.applyStatsReset();
   }
@@ -140,6 +141,18 @@ export class Store {
     this.rounds.flush();
     this.statsWasReset = true;
   }
+
+  /** One-time deletion of every account (usernames + SOL addresses) when ACCOUNTS_EPOCH goes up. */
+  private applyAccountsReset() {
+    if ((this.users.data.accountsEpoch ?? 0) >= ACCOUNTS_EPOCH) return;
+    this.accountsWiped = this.users.data.list.length;
+    this.users.data.list = [];
+    this.users.data.accountsEpoch = ACCOUNTS_EPOCH;
+    this.users.flush();
+  }
+
+  /** How many accounts this start deleted (for the log). */
+  accountsWiped = 0;
 
   /** True when this start wiped the stats (for the log). */
   statsWasReset = false;

@@ -10,7 +10,12 @@
  * each browser resets its personal stats and local high scores (settings and
  * unlocked outfits stay).
  */
-export const STATS_EPOCH = 1;
+export const STATS_EPOCH = 2;
+/**
+ * Bump to delete every account once (usernames + SOL payout addresses):
+ * everyone signs up again. The prize ledger stays.
+ */
+export const ACCOUNTS_EPOCH = 1;
 
 export const PROTOCOL_VERSION = 2;
 export const LAMPORTS_PER_SOL = 1_000_000_000;

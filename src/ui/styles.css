@@ -2749,3 +2749,13 @@ table.lb tr.podium td {
   text-align: center;
   line-height: 1.35;
 }
+
+.reg-notice {
+  margin: 6px 0 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 210, 122, 0.14);
+  border: 1.5px solid rgba(255, 210, 122, 0.6);
+  color: #ffd27a;
+  font-size: 13px;
+}
