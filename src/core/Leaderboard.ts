@@ -36,7 +36,8 @@ export interface LeaderboardService {
   top(heist: string, limit?: number): Promise<ScoreEntry[]>;
 }
 
-const KEY = 'heistmas.scores.v1';
+export const LOCAL_SCORES_KEY = 'heistmas.scores.v1';
+const KEY = LOCAL_SCORES_KEY;
 const MAX_LOCAL = 50;
 
 function uid() {

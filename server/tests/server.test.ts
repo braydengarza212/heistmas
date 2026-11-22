@@ -228,3 +228,25 @@ test('program-derived addresses are refused as payout wallets', () => {
   const [pda] = PublicKey.findProgramAddressSync([Buffer.from('heistmas')], new PublicKey('11111111111111111111111111111111'));
   assert.throws(() => acc.register('Vixen', pda.toBase58(), true, '2.2.2.2'), (e: AccountError) => e.code === 'wallet-invalid');
 });
+
+test('a stats reset wipes every player\'s stats and round history once, keeping accounts', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'heistmas-reset-'));
+  const { writeFileSync } = require('node:fs') as typeof import('node:fs');
+  const w = wallet();
+  writeFileSync(join(dir, 'users.json'), JSON.stringify({ list: [{ id: 'blitzen', username: 'Blitzen', wallet: w, tokens: ['t'], createdAt: 1, wins: 4, podiums: 9, wonLamports: 5e9, bestTimeMs: 61000, roundsPlayed: 30 }] }));
+  writeFileSync(join(dir, 'rounds.json'), JSON.stringify({ lastRoundId: 77, results: [{ round: 77 }], flagged: [{ round: 70, username: 'x', reasons: [], at: 1 }] }));
+  const s = new Store(dir);
+  assert.equal(s.statsWasReset, true);
+  const u = s.userById('blitzen')!;
+  assert.deepEqual([u.wins, u.podiums, u.wonLamports, u.bestTimeMs, u.roundsPlayed], [0, 0, 0, null, 0]);
+  assert.equal(u.wallet, w);
+  assert.equal(s.userByTokenHash('t'), u);
+  assert.equal(s.rounds.data.results.length, 0);
+  assert.equal(s.rounds.data.lastRoundId, 77);
+  // stats earned afterwards survive a restart
+  u.wins = 1;
+  s.flushAll();
+  const again = new Store(dir);
+  assert.equal(again.statsWasReset, false);
+  assert.equal(again.userById('blitzen')!.wins, 1);
+});

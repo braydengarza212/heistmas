@@ -4,6 +4,14 @@
  * All SOL amounts are in lamports (1 SOL = 1,000,000,000 lamports).
  */
 
+/**
+ * Bump to wipe every player's stats once: the server resets wins, podiums,
+ * SOL won, best times, rounds played and round history (accounts stay), and
+ * each browser resets its personal stats and local high scores (settings and
+ * unlocked outfits stay).
+ */
+export const STATS_EPOCH = 1;
+
 export const PROTOCOL_VERSION = 2;
 export const LAMPORTS_PER_SOL = 1_000_000_000;
 

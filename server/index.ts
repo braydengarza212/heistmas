@@ -20,6 +20,7 @@ const log = (m: string) => console.log(`[${new Date().toISOString().slice(11, 19
 
 async function main() {
   const store = new Store(config.dataDir);
+  if (store.statsWasReset) log('stats reset: every player\'s wins, podiums, SOL won, best times and round history were cleared (accounts kept)');
   const accounts = new Accounts(store, config.registrationsPerIpPerHour);
 
   let chain: ChainAdapter;

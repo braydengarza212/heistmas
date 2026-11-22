@@ -3,6 +3,7 @@
  * written atomically (temp file + rename) a moment after it changes.
  * Put DATA_DIR on a persistent disk in production.
  */
+import { STATS_EPOCH } from '../src/shared/protocol';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { PayoutStatus, RoundResults } from '../src/shared/protocol';
@@ -57,6 +58,8 @@ export interface TreasuryLedger {
 }
 
 export interface RoundLog {
+  /** STATS_EPOCH last applied (stats reset). */
+  statsEpoch?: number;
   lastRoundId: number;
   results: RoundResults[];
   flagged: { round: number; username: string; reasons: string[]; at: number }[];
@@ -117,7 +120,29 @@ export class Store {
     }));
     this.rounds = new JsonFile(join(dir, 'rounds.json'), () => ({ lastRoundId: 0, results: [], flagged: [] }));
     for (const u of this.users.data.list) this.index(u);
+    this.applyStatsReset();
   }
+
+  /** One-time wipe of every player's stats when STATS_EPOCH goes up. Accounts, wallets and the money ledger stay. */
+  private applyStatsReset() {
+    if ((this.rounds.data.statsEpoch ?? 0) >= STATS_EPOCH) return;
+    for (const u of this.users.data.list) {
+      u.wins = 0;
+      u.podiums = 0;
+      u.wonLamports = 0;
+      u.bestTimeMs = null;
+      u.roundsPlayed = 0;
+    }
+    this.rounds.data.results = [];
+    this.rounds.data.flagged = [];
+    this.rounds.data.statsEpoch = STATS_EPOCH;
+    this.users.flush();
+    this.rounds.flush();
+    this.statsWasReset = true;
+  }
+
+  /** True when this start wiped the stats (for the log). */
+  statsWasReset = false;
 
   private index(u: UserRecord) {
     this.byId.set(u.id, u);

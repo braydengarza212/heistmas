@@ -1,3 +1,5 @@
+import { STATS_EPOCH } from '../shared/protocol';
+import { LOCAL_SCORES_KEY } from './Leaderboard';
 import type { QualityLevel } from './Engine';
 
 export interface Settings {
@@ -41,6 +43,8 @@ export interface Equipped {
 
 export interface SaveData {
   version: 1;
+  /** STATS_EPOCH these stats belong to (older stats are wiped on load). */
+  statsEpoch?: number;
   settings: Settings;
   stats: Stats;
   unlocked: string[];
@@ -60,6 +64,7 @@ function detectQuality(): QualityLevel {
 export function defaultSave(): SaveData {
   return {
     version: 1,
+    statsEpoch: STATS_EPOCH,
     settings: {
       quality: detectQuality(),
       sensitivity: 1,
@@ -112,7 +117,11 @@ export class SaveManager {
 
   constructor() {
     this.data = this.load();
+    // remember the reset right away so it only ever happens once
+    if (this.wipedStats) this.save();
   }
+
+  private wipedStats = false;
 
   private load(): SaveData {
     const base = defaultSave();
@@ -124,12 +133,23 @@ export class SaveManager {
       return {
         version: 1,
         settings: { ...base.settings, ...(parsed.settings ?? {}) },
-        stats: { ...base.stats, ...(parsed.stats ?? {}) },
+        statsEpoch: STATS_EPOCH,
+        // a stats reset (STATS_EPOCH bump) wipes older stats and the local high scores
+        stats: parsed.statsEpoch === STATS_EPOCH ? { ...base.stats, ...(parsed.stats ?? {}) } : (this.wipeLocalScores(), base.stats),
         unlocked: Array.from(new Set([...base.unlocked, ...(parsed.unlocked ?? [])])),
         equipped: { ...base.equipped, ...(parsed.equipped ?? {}) },
       };
     } catch {
       return base;
+    }
+  }
+
+  private wipeLocalScores() {
+    this.wipedStats = true;
+    try {
+      this.store?.removeItem(LOCAL_SCORES_KEY);
+    } catch {
+      /* ignore */
     }
   }
 
