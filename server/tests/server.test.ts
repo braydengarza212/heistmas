@@ -233,7 +233,7 @@ test('a stats reset wipes every player\'s stats and round history once, keeping 
   const dir = mkdtempSync(join(tmpdir(), 'heistmas-reset-'));
   const { writeFileSync } = require('node:fs') as typeof import('node:fs');
   const w = wallet();
-  writeFileSync(join(dir, 'users.json'), JSON.stringify({ list: [{ id: 'blitzen', username: 'Blitzen', wallet: w, tokens: ['t'], createdAt: 1, wins: 4, podiums: 9, wonLamports: 5e9, bestTimeMs: 61000, roundsPlayed: 30 }], accountsEpoch: 1 }));
+  writeFileSync(join(dir, 'users.json'), JSON.stringify({ list: [{ id: 'blitzen', username: 'Blitzen', wallet: w, tokens: ['t'], createdAt: 1, wins: 4, podiums: 9, wonLamports: 5e9, bestTimeMs: 61000, roundsPlayed: 30 }], accountsEpoch: 2 }));
   writeFileSync(join(dir, 'rounds.json'), JSON.stringify({ lastRoundId: 77, results: [{ round: 77 }], flagged: [{ round: 70, username: 'x', reasons: [], at: 1 }] }));
   const s = new Store(dir);
   assert.equal(s.statsWasReset, true);
