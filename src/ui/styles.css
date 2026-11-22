@@ -2578,8 +2578,9 @@ table.lb tr.podium td {
 }
 .weapon {
   position: absolute;
-  right: 28px;
-  bottom: 168px;
+  /* bottom-left, stacked just above the hearts */
+  left: 28px;
+  bottom: 116px;
   display: none;
   align-items: center;
   gap: 10px;
