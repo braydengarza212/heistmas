@@ -70,6 +70,8 @@ export class Online implements OnlineView {
     menus.online = this;
     this.buildScreens();
     this.client.on((m) => this.onMessage(m));
+    // a saved sign-in may belong to an account the server no longer has (accounts reset): check it now
+    void this.verifySession();
   }
 
   // --------------------------------------------------------- OnlineView
@@ -191,6 +193,23 @@ export class Online implements OnlineView {
         this.menus.show('main');
       } else if (x === 'join') void this.join(Number(t.dataset.id));
     });
+  }
+
+  private async verifySession() {
+    const s = this.session;
+    if (!s) return;
+    try {
+      await api.me(s.token);
+    } catch (e) {
+      // only a definite "no such account" signs you out; offline / server errors keep the session
+      if (e instanceof ApiError && e.code === 'auth' && this.session === s) {
+        this.session = null;
+        saveSession(null);
+        this.regStep = 'name';
+        this.regNotice = 'Accounts were reset: pick a robber name and enter your SOL payout address again.';
+        if (this.menus.active === 'servers') this.menus.show('register');
+      }
+    }
   }
 
   // ---- register / login
