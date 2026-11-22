@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Heistmas — Silent Night. Five Stars.</title>
+    <meta name="description" content="Heistmas: a 3D Christmas heist party game. Sneak past penguin guards, crack the vault and escape with the loot. Free to play in your browser." />
+    <meta name="theme-color" content="#0b1036" />
+    <meta property="og:title" content="Heistmas — Silent Night. Five Stars." />
+    <meta property="og:description" content="A 3D Christmas heist party game. Crack the vault, dodge the lasers, outrun the penguins." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #070a1c; overflow: hidden; }
+      #boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: radial-gradient(ellipse at center, #1c1650, #070a1c); color: #fff7e8; z-index: 100;
+        font-family: 'Arial Rounded MT Bold', 'Arial Black', system-ui, sans-serif; transition: opacity .5s; }
+      #boot.hide { opacity: 0; pointer-events: none; }
+      #boot h1 { margin: 0; font-size: clamp(48px, 9vw, 110px); letter-spacing: 2px; color: #fff;
+        text-shadow: 0 6px 0 #a3101c, 0 14px 30px rgba(0,0,0,.6); transform: rotate(-3deg); }
+      #boot .bar { width: min(360px, 70vw); height: 14px; border: 3px solid #fff; border-radius: 10px; margin-top: 28px; overflow: hidden; }
+      #boot .bar i { display: block; height: 100%; width: 8%; background: linear-gradient(90deg, #e8283a, #f6c453); transition: width .3s; }
+      #boot p { margin-top: 14px; opacity: .8; font-family: system-ui, sans-serif; }
+      #boot .err { max-width: 520px; text-align: center; line-height: 1.5; }
+    </style>
+  </head>
+  <body>
+    <div id="boot"><h1>HEISTMAS</h1><div class="bar"><i></i></div><p>Loading the getaway van…</p></div>
+    <div id="app"></div>
+    <noscript><p style="color:#fff;text-align:center;margin-top:40vh;font-family:sans-serif">Heistmas needs JavaScript and WebGL to run.</p></noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

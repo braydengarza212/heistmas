@@ -1,0 +1,41 @@
+{
+  "name": "heistmas",
+  "private": true,
+  "version": "1.1.0",
+  "description": "Heistmas \u2014 a 3D Christmas heist party game. Silent Night. Five Stars.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "build:fast": "vite build",
+    "preview": "vite preview",
+    "start": "tsx server/index.ts",
+    "server:dev": "tsx watch server/index.ts",
+    "server:check": "tsx server/tools/check.ts",
+    "bots": "tsx server/tools/bots.ts",
+    "test": "tsx --test server/tests/*.test.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p server",
+    "build:cdn": "tsc --noEmit && vite build --mode cdn && node -e \"require('fs').renameSync('dist-cdn/index.cdn.html','dist-cdn/index.html')\""
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.21.0",
+    "@fontsource/fredoka": "^5.3.0",
+    "@fontsource/titan-one": "^5.3.0",
+    "@pump-fun/pump-sdk": "^4.3.1",
+    "@solana/web3.js": "^1.99.0",
+    "bs58": "^6.0.0",
+    "three": "^0.187.0",
+    "tsx": "^4.23.15",
+    "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/three": "^0.187.0",
+    "@types/ws": "^8.18.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  },
+  "engines": {
+    "node": ">=20.10"
+  }
+}
