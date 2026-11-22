@@ -84,7 +84,7 @@ export class Hud {
       <div class="stage-banner"><div class="sb-num"></div><div class="sb-name"></div><div class="sb-diff"></div></div>
       <div class="letterbox top"></div><div class="letterbox bottom"><span>Press any key to skip</span></div>
       <div class="controls-hint"><kbd>WASD</kbd> move · <kbd>Mouse</kbd> look · <kbd>Space</kbd> jump · <kbd>Shift</kbd> sprint · <kbd>Ctrl</kbd>/<kbd>C</kbd> dive &amp; slide · <kbd>E</kbd> interact · <kbd>Q</kbd> lock camera · <kbd>Esc</kbd> pause</div>
-      <div class="lock-hint">Click to control the camera</div>
+      <div class="lock-hint">Click or press any key to lock the cursor</div>
       <div class="fps"></div>`;
     root.appendChild(this.el);
     this.objective = this.q('.objective');

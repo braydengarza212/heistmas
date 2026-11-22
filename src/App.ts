@@ -160,7 +160,8 @@ export class App {
         this.fpsFrames = 0;
       }
     }
-    if (this.mode === 'heist' && this.heist && !this.heist.paused && this.heist.state === 'play') {
+    const st = this.heist?.state;
+    if (this.mode === 'heist' && this.heist && !this.heist.paused && (st === 'play' || st === 'ready' || st === 'intro')) {
       this.hud.showLockHint(!this.input.pointerLocked && !this.input.pointerLockFailed);
     } else this.hud.showLockHint(false);
     requestAnimationFrame(this.loop);

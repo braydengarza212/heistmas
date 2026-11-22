@@ -19,6 +19,10 @@ export class Input {
   private gestureRequest = false;
   onPointerLockChange: ((locked: boolean) => void) | null = null;
   private lastRequestAt = -1e9;
+  /** A lock request is in flight (a second one can make the browser grant and drop it). */
+  private lockPendingUntil = 0;
+  /** Gesture-backed requests the browser refused in a row; only repeated refusals mean "no lock here". */
+  private lockFailures = 0;
 
   constructor(private canvas: HTMLCanvasElement) {
     window.addEventListener('keydown', (e) => this.onKeyDown(e), { capture: true });
@@ -65,14 +69,22 @@ export class Input {
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('pointerlockchange', () => {
       this.pointerLocked = document.pointerLockElement === this.canvas;
+      this.lockPendingUntil = 0;
+      if (this.pointerLocked) {
+        this.lockFailures = 0;
+        this.pointerLockFailed = false;
+      }
       this.onPointerLockChange?.(this.pointerLocked);
     });
     document.addEventListener('pointerlockerror', () => {
-      if (this.gestureRequest) this.pointerLockFailed = true;
+      this.lockPendingUntil = 0;
+      if (this.gestureRequest) this.noteLockFailure();
     });
   }
 
   private onKeyDown(e: KeyboardEvent) {
+    // A key press is a user gesture, so it can capture the cursor (W to start running locks it).
+    if (this.gameplayActive && !this.pointerLocked && !e.repeat && e.code !== 'Escape' && !e.metaKey && !e.altKey) this.requestPointerLock(true);
     // Never block browser/devtools shortcuts outside of gameplay.
     if (this.gameplayActive) {
       const allow = e.code === 'F5' || e.code === 'F11' || e.code === 'F12';
@@ -101,21 +113,34 @@ export class Input {
   /** fromGesture: called from a click. Only those failures mean "unsupported here". */
   requestPointerLock(fromGesture = false) {
     if (this.pointerLocked) return;
+    if (performance.now() < this.lockPendingUntil) return;
     // A second request while one is pending can make the browser grant and
     // then drop the lock, which reads as the player pressing Esc.
     const now = performance.now();
     if (!fromGesture && now - this.lastRequestAt < 1500) return;
     this.lastRequestAt = now;
     this.gestureRequest = fromGesture;
+    this.lockPendingUntil = now + 1000;
     try {
       const p = this.canvas.requestPointerLock() as unknown as Promise<void> | undefined;
       if (p && typeof p.catch === 'function')
         p.catch(() => {
-          if (fromGesture) this.pointerLockFailed = true;
+          this.lockPendingUntil = 0;
+          if (fromGesture) this.noteLockFailure();
         });
     } catch {
-      if (fromGesture) this.pointerLockFailed = true;
+      this.lockPendingUntil = 0;
+      if (fromGesture) this.noteLockFailure();
     }
+  }
+
+  /**
+   * One refusal is usually temporary (Chrome refuses for about a second after
+   * Esc releases the cursor), so keep asking on every click / key press. Only
+   * after several refusals in a row fall back to drag-to-look.
+   */
+  private noteLockFailure() {
+    if (++this.lockFailures >= 4) this.pointerLockFailed = true;
   }
 
   exitPointerLock() {
