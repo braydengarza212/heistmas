@@ -64,7 +64,7 @@ export class Hud {
       <div class="zone-label"></div>
       <div class="timer panel">${ICON.clock}<span>6:00</span></div>
       <div class="wanted panel"><div class="stars">${ICON.star.repeat(5)}</div><div class="label"></div></div>
-      <div class="health panel">${ICON.heart.repeat(5)}</div>
+      <div class="health panel">${ICON.heart.repeat(10)}</div>
       <div class="pot panel">
         <div class="pot-top"><span class="pot-tag">PRIZE POT</span><span class="pot-round"></span></div>
         <div class="pot-amount"><b>0.000</b><span class="unit">SOL</span><span class="usd"></span></div>
@@ -314,8 +314,11 @@ export class Hud {
     const hearts = this.healthEl.querySelectorAll('svg');
     hearts.forEach((s, i) => {
       s.classList.toggle('empty', i >= h);
+      // hearts from hidden pickups (beyond the starting five) are gold-rimmed
+      s.classList.toggle('bonus', i >= 5);
       (s as SVGElement).style.display = i < max ? '' : 'none';
     });
+    this.healthEl.classList.toggle('many', max > 5);
     if (hit) {
       this.healthEl.classList.remove('hit');
       void this.healthEl.offsetWidth;

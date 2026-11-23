@@ -10,6 +10,7 @@ import { DebrisManager } from './heistObjects';
 import { EscapeCinematic } from './getaway';
 import { Arsenal, FREEZE_SECONDS, WEAPON_AMMO, WEAPONS, netIndex, type Pickup, type WeaponDef } from './Arsenal';
 import { RemotePlayers } from './RemotePlayers';
+import { HeartPickups, MAX_HEARTS } from './HeartPickups';
 import { CHAR_SCALE } from './scale';
 import type { GameClient } from '../net/GameClient';
 import { ANIMS, FLAG_FROZEN, FLAG_SPRINT, NET_WEAPONS, PLAYER_FREEZE_MS, STATE_HZ, type ServerMsg } from '../shared/protocol';
@@ -109,7 +110,9 @@ export class Heist {
   private elapsed = 0;
   lootValue = 0;
   health = 5;
-  readonly maxHealth = 5;
+  /** Grows with hidden heart pickups (up to MAX_HEARTS). */
+  maxHealth = 5;
+  private hearts!: HeartPickups;
   private checkpointIdx = 0;
   private zone: ZoneInfo | null = null;
   private stage = 0;
@@ -215,6 +218,8 @@ export class Heist {
       for (const ch of this.deps.online.title) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
     }
     this.arsenal = new Arsenal(this.physics, this.scene, seed, this.player.bean.root);
+    // an extra-life heart hides on every other stage (never in the weapon's nook)
+    this.hearts = new HeartPickups(this.scene, seed, new Map(this.arsenal.pickups.map((pk) => [pk.def.stage, pk.spot])));
     // shared world: other robbers in this bank
     const net = this.deps.online?.net;
     if (net) {
@@ -301,7 +306,8 @@ export class Heist {
     this.level.getaway.setExtractionVisible(true);
 
     // view
-    engine.setView(this.scene, this.cam.camera, { bloomStrength: 0.55, bloomRadius: 0.5, bloomThreshold: 2.0, exposure: 1.05, aoIntensity: 0.9 });
+    // gentle bloom: only genuinely bright points glow, and the halos stay tight (no screen-filling glare)
+    engine.setView(this.scene, this.cam.camera, { bloomStrength: 0.28, bloomRadius: 0.28, bloomThreshold: 3.0, exposure: 1.0, aoIntensity: 0.9 });
     onProgress?.(0.75, 'Warming up the cocoa…');
     // pre-compile shaders to avoid hitches on first sight of each material
     this.cam.camera.position.set(0, 20, 40);
@@ -464,6 +470,12 @@ export class Heist {
         if (this.arsenal.wantsAny) this.takeWeapon(pk);
         else this.swapPickup = pk;
       }
+    }
+    // ---- hidden hearts: one more life
+    this.hearts.update(h, p.feet);
+    if (this.state === 'play' && !p.knocked) {
+      const heart = this.hearts.tryPickup(p.feet);
+      if (heart) this.gainHeart(heart.spot);
     }
     this.arsenal.update(h, this.guards, p.feet, {
       hitGuard: (g, dir, at, def) => {
@@ -758,7 +770,7 @@ export class Heist {
     for (const b of L.alarmBeacons) {
       b.rotation.y += dt * 6;
       const lamp = b.children[1] as THREE.Mesh;
-      lamp.material = alarm && pulse > 0.5 ? (lampOn ??= new THREE.MeshBasicMaterial({ color: new THREE.Color(8, 0.6, 0.6) })) : (lampOff ??= new THREE.MeshBasicMaterial({ color: 0x551015 }));
+      lamp.material = alarm && pulse > 0.5 ? (lampOn ??= new THREE.MeshBasicMaterial({ color: new THREE.Color(3.4, 0.4, 0.4) })) : (lampOff ??= new THREE.MeshBasicMaterial({ color: 0x551015 }));
     }
 
     // ambient FX
@@ -1067,6 +1079,7 @@ export class Heist {
           this.hud.stageBanner(info.n, 10, z.name, info.difficulty);
           const pk = this.arsenal.pickupForStage(info.n);
           if (pk) this.hud.notify(`HIDDEN HERE: ${pk.def.name}`, 'star', `${pk.def.kind} — ${pk.def.blurb}`);
+          if (this.hearts.forStage(info.n)) this.hud.notify('A HEART IS HIDDEN HERE', 'good', 'Find it for an extra life');
         }
         if (info.wantedFloor) this.wanted.setFloor(info.wantedFloor);
         if (info.n >= 7) this.sfx('checkpoint', 0.8);
@@ -1297,6 +1310,18 @@ export class Heist {
     }
   }
 
+  /** A hidden heart: one more heart slot, filled. */
+  private gainHeart(at: THREE.Vector3) {
+    const before = this.maxHealth;
+    this.maxHealth = Math.min(MAX_HEARTS, this.maxHealth + 1);
+    this.health = Math.min(this.maxHealth, this.health + 1);
+    this.hud.setHealth(this.health, this.maxHealth);
+    this.sfx('heal');
+    this.sfx('unlock', 0.6);
+    this.fx.glints.emit(at.clone().add(new THREE.Vector3(0, 0.8, 0)), { count: 34, color: [0xff4d6d, 0xffffff], speed: 4.5, up: 2.5, size: 0.4, life: 0.9, gravity: 2 });
+    this.hud.notify('EXTRA LIFE!', 'good', this.maxHealth > before ? `+1 heart — you now have ${this.maxHealth} hearts` : '+1 heart');
+  }
+
   private takeWeapon(pk: Pickup) {
     const p = this.player;
     this.arsenal.take(pk);
@@ -1311,7 +1336,7 @@ export class Heist {
     this.hud.announce(
       'A WEAPON IS HIDDEN ON EVERY STAGE',
       'FESTIVE ARSENAL',
-      `Starting with the Frosty Blaster, hidden somewhere in this plaza. Every gun fires snowballs and holds ${WEAPON_AMMO} shots: blast penguin guards back and freeze them for ${FREEZE_SECONDS} seconds!`,
+      `Starting with the Frosty Blaster, hidden somewhere in this plaza. Every gun fires snowballs and holds ${WEAPON_AMMO} shots: blast penguin guards back and freeze them for ${FREEZE_SECONDS} seconds! Every other stage also hides a heart that gives you an extra life.`,
       7,
     );
   }
@@ -1588,6 +1613,7 @@ export class Heist {
     this.audio.setSiren(false);
     this.audio.setRotor(0);
     this.arsenal?.dispose();
+    this.hearts?.dispose();
     this.netOff?.();
     this.remote?.dispose();
     this.cam.fovOverride = null;

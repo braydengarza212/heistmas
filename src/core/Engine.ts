@@ -157,7 +157,8 @@ export class Engine {
 
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     const room = new RoomEnvironment();
-    this.envTexture = pmrem.fromScene(room, 0.035).texture;
+    // a softer reflection environment: polished gold and chrome no longer mirror its hot light panels as glare
+    this.envTexture = pmrem.fromScene(room, 0.12).texture;
     room.traverse((o) => {
       const m = o as THREE.Mesh;
       if (m.isMesh) {

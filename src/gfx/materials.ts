@@ -28,7 +28,7 @@ function repeatTex(t: THREE.Texture, rx: number, ry: number) {
 
 export const Mats = {
   gold: () =>
-    get('gold', () => new THREE.MeshPhysicalMaterial({ color: 0xf5bf45, metalness: 1, roughness: 0.2 })),
+    get('gold', () => new THREE.MeshPhysicalMaterial({ color: 0xf5bf45, metalness: 1, roughness: 0.3 })),
   goldSatin: () =>
     get('goldSatin', () => new THREE.MeshPhysicalMaterial({ color: 0xe0a93a, metalness: 1, roughness: 0.38 })),
   goldPresent: () =>
@@ -302,7 +302,8 @@ export const Mats = {
   // ----------------------------------------------------- emissive (bloom)
   glow: (hex: number, intensity = 5) =>
     get(`glow${hex.toString(16)}_${intensity}`, () => {
-      const c = new THREE.Color(hex).multiplyScalar(intensity);
+      // capped so glowing bits bloom softly instead of flaring across the screen
+      const c = new THREE.Color(hex).multiplyScalar(Math.min(intensity, 3.4));
       return new THREE.MeshBasicMaterial({ color: c });
     }),
   bulbInstanced: () =>

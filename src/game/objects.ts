@@ -39,7 +39,7 @@ export class LaserBeam {
   active = true;
 
   constructor(parent: THREE.Object3D, color: number) {
-    const coreMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(9) });
+    const coreMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(3.6) });
     const haloMat = new THREE.MeshBasicMaterial({
       color: new THREE.Color(color).multiplyScalar(1.2),
       transparent: true,

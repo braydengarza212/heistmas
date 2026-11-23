@@ -865,7 +865,7 @@ export function moltenGoldMaterial() {
         vec3 cool = vec3(0.2, 0.08, 0.02);
         vec3 c = mix(hot, warm, smoothstep(0.25, 0.5, a));
         c = mix(c, cool, crust);
-        c += vec3(1.9, 1.2, 0.4) * veins * (1.0 - crust);
+        c += vec3(1.25, 0.8, 0.26) * veins * (1.0 - crust);
         gl_FragColor = vec4(c, 1.0);
       }`,
   });

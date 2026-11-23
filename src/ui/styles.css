@@ -2837,3 +2837,13 @@ table.lb tr.podium td {
   margin-left: auto;
   margin-right: 8px;
 }
+
+/* extra hearts from hidden pickups */
+.health svg.bonus path {
+  stroke: #f6c453;
+  stroke-width: 3.5;
+}
+.health.many svg {
+  width: 36px;
+  height: 36px;
+}
