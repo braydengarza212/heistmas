@@ -69,9 +69,10 @@ export const Mats = {
       () =>
         new THREE.MeshPhysicalMaterial({
           map: repeatTex(TextureLib.marbleChecker(), rx, ry),
-          roughness: 0.16,
-          clearcoat: 0.8,
-          clearcoatRoughness: 0.06,
+          // satin polish: lamps give a soft sheen instead of a mirror hotspot (glare)
+          roughness: 0.4,
+          clearcoat: 0.25,
+          clearcoatRoughness: 0.35,
         }),
     ),
   marbleCream: (rx = 1, ry = 1) =>
@@ -80,9 +81,9 @@ export const Mats = {
       () =>
         new THREE.MeshPhysicalMaterial({
           map: repeatTex(TextureLib.marbleCream(), rx, ry),
-          roughness: 0.22,
-          clearcoat: 0.5,
-          clearcoatRoughness: 0.1,
+          roughness: 0.42,
+          clearcoat: 0.2,
+          clearcoatRoughness: 0.35,
         }),
     ),
   marbleRed: (rx = 1, ry = 1) =>
@@ -91,9 +92,9 @@ export const Mats = {
       () =>
         new THREE.MeshPhysicalMaterial({
           map: repeatTex(TextureLib.marbleRed(), rx, ry),
-          roughness: 0.18,
-          clearcoat: 0.7,
-          clearcoatRoughness: 0.08,
+          roughness: 0.42,
+          clearcoat: 0.2,
+          clearcoatRoughness: 0.35,
         }),
     ),
   wallpaper: (rx = 1, ry = 1) =>

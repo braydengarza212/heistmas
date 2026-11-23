@@ -53,7 +53,8 @@ export class BulbField {
     const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     mat.onBeforeCompile = (sh) => {
       sh.uniforms.uTime = sharedTime;
-      sh.uniforms.uBright = { value: brightness };
+      // capped: fairy lights twinkle brightly but never flare into glare
+      sh.uniforms.uBright = { value: Math.min(brightness, 3.2) };
       sh.vertexShader = sh.vertexShader
         .replace('#include <common>', '#include <common>\nattribute float aPhase;\nuniform float uTime;\nvarying float vTw;')
         .replace(

@@ -189,7 +189,7 @@ export class PenguinModel {
     this.flashlight.position.set(0.04, -0.36, 0.1);
     this.flipR.add(this.flashlight);
     mk(cyl(0.045, 0.04, 0.22, 12), Mats.darkMetal(), this.flashlight).rotation.x = Math.PI / 2;
-    mk(cyl(0.055, 0.055, 0.04, 12), Mats.glow(0xfff2c0, 5), this.flashlight, false).rotation.x = Math.PI / 2;
+    mk(cyl(0.055, 0.055, 0.04, 12), Mats.glow(0xfff2c0, 2.2), this.flashlight, false).rotation.x = Math.PI / 2;
     (this.flashlight.children[1] as THREE.Mesh).position.z = 0.12;
 
     // feet

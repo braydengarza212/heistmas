@@ -245,7 +245,7 @@ export class MenuScene {
   }
 
   activate() {
-    this.engine.setView(this.scene, this.camera, { bloomStrength: 0.5, bloomRadius: 0.45, bloomThreshold: 2.2, exposure: 0.95, aoIntensity: 0.8 });
+    this.engine.setView(this.scene, this.camera, { bloomStrength: 0.25, bloomRadius: 0.3, bloomThreshold: 4.0, exposure: 0.95, aoIntensity: 0.8 });
   }
 
   update(dt: number) {

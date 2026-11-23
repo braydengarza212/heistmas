@@ -307,7 +307,7 @@ export class Heist {
 
     // view
     // gentle bloom: only genuinely bright points glow, and the halos stay tight (no screen-filling glare)
-    engine.setView(this.scene, this.cam.camera, { bloomStrength: 0.28, bloomRadius: 0.28, bloomThreshold: 3.0, exposure: 1.0, aoIntensity: 0.9 });
+    engine.setView(this.scene, this.cam.camera, { bloomStrength: 0.22, bloomRadius: 0.25, bloomThreshold: 4.2, exposure: 1.0, aoIntensity: 0.9 });
     onProgress?.(0.75, 'Warming up the cocoa…');
     // pre-compile shaders to avoid hitches on first sight of each material
     this.cam.camera.position.set(0, 20, 40);
